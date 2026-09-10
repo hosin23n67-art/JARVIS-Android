@@ -8,6 +8,8 @@
     <application
         android:allowBackup="true"
         android:label="JARVIS"
+        android:icon="@drawable/jarvis_icon"
+        android:roundIcon="@drawable/jarvis_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.Jarvis">
         <activity
