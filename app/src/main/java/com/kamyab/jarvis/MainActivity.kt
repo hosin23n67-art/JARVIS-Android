@@ -30,8 +30,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var log: TextView
     private lateinit var input: EditText
     private lateinit var orb: TextView
+    private lateinit var micButton: Button
     private var waitingForCommand = false
     private var keepListening = true
+    private var micEnabled = true
 
     private val cyan = Color.rgb(65, 230, 255)
     private val cyanSoft = Color.rgb(135, 239, 255)
@@ -74,36 +76,23 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             gravity = Gravity.CENTER_HORIZONTAL
         }
 
-        val top = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val brand = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val title = TextView(this).apply {
-            text = "J.A.R.V.I.S"
-            textSize = 29f
-            setTextColor(cyan)
-            setTypeface(Typeface.DEFAULT, Typeface.BOLD)
-            letterSpacing = 0.18f
+            text = "J.A.R.V.I.S"; textSize = 29f; setTextColor(cyan)
+            setTypeface(Typeface.DEFAULT, Typeface.BOLD); letterSpacing = 0.18f
         }
         val subtitle = TextView(this).apply {
-            text = "PERSONAL AI ASSISTANT  •  v1.1"
-            textSize = 9f
-            setTextColor(Color.rgb(90, 150, 170))
-            letterSpacing = 0.1f
+            text = "PERSONAL AI ASSISTANT  •  v1.1"; textSize = 9f
+            setTextColor(Color.rgb(90, 150, 170)); letterSpacing = 0.1f
         }
-        brand.addView(title)
-        brand.addView(subtitle)
+        brand.addView(title); brand.addView(subtitle)
         top.addView(brand, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         top.addView(label("●  ONLINE"))
         root.addView(top, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
-        val chips = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(0, dp(18), 0, dp(12))
-        }
-        listOf("AI CORE  READY", "MIC  ACTIVE", "FA-IR").forEachIndexed { i, s ->
+        val chips = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; setPadding(0, dp(18), 0, dp(12)) }
+        listOf("AI CORE  READY", "MIC  CONTROL", "FA-IR").forEachIndexed { i, s ->
             val p = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             if (i > 0) p.marginStart = dp(7)
             chips.addView(label(s), p)
@@ -111,101 +100,81 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         root.addView(chips, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
         orb = TextView(this).apply {
-            text = "◉"
-            textSize = 100f
-            gravity = Gravity.CENTER
-            setTextColor(cyan)
+            text = "◉"; textSize = 100f; gravity = Gravity.CENTER; setTextColor(cyan)
             setShadowLayer(28f, 0f, 0f, cyan)
             background = rounded(Color.rgb(4, 19, 29), Color.rgb(31, 151, 180), 100f)
             contentDescription = "JARVIS voice core"
-            setOnClickListener { startListening() }
+            setOnClickListener { if (micEnabled) startListening() }
         }
-        val orbParams = LinearLayout.LayoutParams(dp(190), dp(190)).apply {
-            gravity = Gravity.CENTER_HORIZONTAL
-            topMargin = dp(4)
-            bottomMargin = dp(12)
-        }
-        root.addView(orb, orbParams)
+        root.addView(orb, LinearLayout.LayoutParams(dp(190), dp(190)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = dp(4); bottomMargin = dp(12) })
 
         status = TextView(this).apply {
-            text = "LISTENING  •  منتظر فرمان شما"
-            textSize = 13f
-            setTextColor(cyanSoft)
-            gravity = Gravity.CENTER
-            setTypeface(Typeface.DEFAULT, Typeface.BOLD)
-            setPadding(0, dp(4), 0, dp(12))
+            text = "LISTENING  •  منتظر فرمان شما"; textSize = 13f; setTextColor(cyanSoft); gravity = Gravity.CENTER
+            setTypeface(Typeface.DEFAULT, Typeface.BOLD); setPadding(0, dp(4), 0, dp(12))
         }
         root.addView(status, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
-        val consoleTitle = TextView(this).apply {
-            text = "  CONVERSATION LOG   /   گزارش گفتگو"
-            textSize = 10f
-            setTextColor(Color.rgb(78, 164, 188))
-            setPadding(dp(4), dp(7), 0, dp(7))
-        }
-        root.addView(consoleTitle, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        root.addView(TextView(this).apply {
+            text = "  CONVERSATION LOG   /   گزارش گفتگو"; textSize = 10f
+            setTextColor(Color.rgb(78, 164, 188)); setPadding(dp(4), dp(7), 0, dp(7))
+        }, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
 
-        val scroll = ScrollView(this).apply {
-            background = rounded(panel, Color.rgb(21, 71, 88), 18f)
-        }
+        val scroll = ScrollView(this).apply { background = rounded(panel, Color.rgb(21, 71, 88), 18f) }
         log = TextView(this).apply {
-            text = "JARVIS  ›  سیستم آماده است. فقط بگو «جارویس».\n"
-            textSize = 15f
-            setTextColor(Color.rgb(220, 246, 250))
-            setLineSpacing(dp(3).toFloat(), 1.05f)
-            setPadding(dp(16), dp(14), dp(16), dp(14))
-            textDirection = View.TEXT_DIRECTION_RTL
+            text = "JARVIS  ›  سیستم آماده است. فقط بگو «جارویس».\n"; textSize = 15f
+            setTextColor(Color.rgb(220, 246, 250)); setLineSpacing(dp(3).toFloat(), 1.05f)
+            setPadding(dp(16), dp(14), dp(16), dp(14)); textDirection = View.TEXT_DIRECTION_RTL
         }
         scroll.addView(log)
         root.addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
 
         val commandBox = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(8), dp(7), dp(7), dp(7))
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(7), dp(7), dp(7))
             background = rounded(Color.rgb(7, 18, 28), Color.rgb(25, 95, 115), 20f)
         }
         input = EditText(this).apply {
-            hint = "فرمانت را بنویس..."
-            setHintTextColor(Color.rgb(85, 128, 140))
-            setTextColor(Color.WHITE)
-            textSize = 15f
-            setSingleLine(true)
-            background = null
-            textDirection = View.TEXT_DIRECTION_RTL
-            setPadding(dp(8), 0, dp(8), 0)
+            hint = "فرمانت را بنویس..."; setHintTextColor(Color.rgb(85, 128, 140)); setTextColor(Color.WHITE)
+            textSize = 15f; setSingleLine(true); background = null; textDirection = View.TEXT_DIRECTION_RTL; setPadding(dp(8), 0, dp(8), 0)
         }
         val send = Button(this).apply {
-            text = "ارسال  ›"
-            textSize = 12f
-            setTextColor(bg)
-            background = rounded(cyan, cyan, 16f)
-            setOnClickListener {
-                val command = input.text.toString().trim()
-                if (command.isNotEmpty()) { input.setText(""); processCommand(command) }
-            }
+            text = "ارسال  ›"; textSize = 12f; setTextColor(bg); background = rounded(cyan, cyan, 16f)
+            setOnClickListener { val command = input.text.toString().trim(); if (command.isNotEmpty()) { input.setText(""); processCommand(command) } }
         }
-        commandBox.addView(input, LinearLayout.LayoutParams(0, dp(48), 1f))
-        commandBox.addView(send, LinearLayout.LayoutParams(dp(92), dp(48)))
-        val boxParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
-        root.addView(commandBox, boxParams)
+        commandBox.addView(input, LinearLayout.LayoutParams(0, dp(48), 1f)); commandBox.addView(send, LinearLayout.LayoutParams(dp(92), dp(48)))
+        root.addView(commandBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
 
-        val mic = Button(this).apply {
-            text = "🎙   فعال‌کردن شنود جارویس"
-            textSize = 14f
-            setTextColor(cyan)
-            background = rounded(Color.rgb(5, 24, 35), cyan, 18f)
-            setOnClickListener { startListening() }
+        micButton = Button(this).apply {
+            text = "🎙  میکروفون روشن — لمس برای قطع"; textSize = 14f; setTextColor(bg)
+            background = rounded(cyan, cyan, 18f)
+            setOnClickListener { toggleMicrophone() }
         }
-        val micParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(9) }
-        root.addView(mic, micParams)
+        root.addView(micButton, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(9) })
         setContentView(root)
     }
 
-    private fun setState(text: String, active: Boolean = true) {
-        status.text = text
-        orb.setTextColor(if (active) cyan else Color.rgb(80, 135, 150))
+    private fun toggleMicrophone() {
+        micEnabled = !micEnabled
+        if (micEnabled) {
+            keepListening = true
+            micButton.text = "🎙  میکروفون روشن — لمس برای قطع"
+            micButton.setTextColor(bg)
+            micButton.background = rounded(cyan, cyan, 18f)
+            append("JARVIS  ›  میکروفون روشن شد.")
+            setState("LISTENING  •  میکروفون روشن")
+            startListening()
+        } else {
+            keepListening = false
+            waitingForCommand = false
+            try { speechRecognizer.cancel() } catch (_: Exception) {}
+            micButton.text = "🔇  میکروفون خاموش — لمس برای وصل"
+            micButton.setTextColor(cyanSoft)
+            micButton.background = rounded(Color.rgb(35, 18, 24), Color.rgb(180, 70, 85), 18f)
+            append("JARVIS  ›  میکروفون خاموش شد.")
+            setState("MIC OFF  •  میکروفون خاموش", false)
+        }
     }
+
+    private fun setState(text: String, active: Boolean = true) { status.text = text; orb.setTextColor(if (active) cyan else Color.rgb(80, 135, 150)) }
 
     private fun setupSpeech() {
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
@@ -215,15 +184,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }
         speechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { setState("LISTENING  •  در حال شنیدن") }
-            override fun onBeginningOfSpeech() { setState("VOICE DETECTED  •  صدای شما دریافت شد") }
+            override fun onReadyForSpeech(params: Bundle?) { if (micEnabled) setState("LISTENING  •  در حال شنیدن") }
+            override fun onBeginningOfSpeech() { if (micEnabled) setState("VOICE DETECTED  •  صدای شما دریافت شد") }
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { setState("THINKING  •  در حال پردازش") }
-            override fun onError(error: Int) { setState("STANDBY  •  منتظر «جارویس»", false); restartListening() }
+            override fun onEndOfSpeech() { if (micEnabled) setState("THINKING  •  در حال پردازش") }
+            override fun onError(error: Int) { if (micEnabled) { setState("STANDBY  •  منتظر «جارویس»", false); restartListening() } }
             override fun onPartialResults(partialResults: Bundle?) {}
             override fun onEvent(eventType: Int, params: Bundle?) {}
             override fun onResults(results: Bundle?) {
+                if (!micEnabled) return
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 if (text.isNotBlank()) handleSpeech(text) else restartListening()
             }
@@ -233,10 +203,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun handleSpeech(text: String) {
         append("شما  ›  $text")
         val lower = text.lowercase(Locale.getDefault())
-        val wakeFa = lower.contains("جارویس")
-        val wakeEn = lower.contains("jarvis")
         if (waitingForCommand) { waitingForCommand = false; processCommand(text); return }
-        if (wakeFa || wakeEn) {
+        if (lower.contains("جارویس") || lower.contains("jarvis")) {
             val command = lower.replace("جارویس", "").replace("jarvis", "").trim()
             if (command.isBlank()) { waitingForCommand = true; speak("بله؟") } else processCommand(command)
         } else restartListening()
@@ -252,16 +220,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             c.contains("خوبی") -> "ممنون، همه سیستم‌ها فعال هستند."
             else -> "دستور شما دریافت شد: $command"
         }
-        append("JARVIS  ›  $answer")
-        speak(answer)
+        append("JARVIS  ›  $answer"); speak(answer)
     }
 
     private fun speak(text: String) {
         setState("SPEAKING  •  در حال پاسخ")
+        val shouldResume = micEnabled
         keepListening = false
         try { speechRecognizer.cancel() } catch (_: Exception) {}
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "jarvis")
-        android.os.Handler(mainLooper).postDelayed({ keepListening = true; startListening() }, 1800L + text.length * 35L)
+        android.os.Handler(mainLooper).postDelayed({ if (shouldResume && micEnabled) { keepListening = true; startListening() } }, 1800L + text.length * 35L)
     }
 
     private fun append(text: String) { log.append("\n$text\n") }
@@ -273,23 +241,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 100 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) startListening()
+        if (requestCode == 100 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED && micEnabled) startListening()
     }
 
     private fun startListening() {
-        if (!keepListening || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+        if (!micEnabled || !keepListening || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
         try { speechRecognizer.startListening(speechIntent) } catch (_: Exception) {}
     }
 
-    private fun restartListening() { if (keepListening) android.os.Handler(mainLooper).postDelayed({ startListening() }, 650) }
+    private fun restartListening() { if (micEnabled && keepListening) android.os.Handler(mainLooper).postDelayed({ startListening() }, 650) }
 
-    override fun onInit(statusCode: Int) {
-        if (statusCode == TextToSpeech.SUCCESS) { tts.language = Locale("fa", "IR"); tts.setSpeechRate(0.95f) }
-    }
+    override fun onInit(statusCode: Int) { if (statusCode == TextToSpeech.SUCCESS) { tts.language = Locale("fa", "IR"); tts.setSpeechRate(0.95f) } }
 
     override fun onDestroy() {
-        keepListening = false
-        speechRecognizer.destroy(); tts.stop(); tts.shutdown()
-        super.onDestroy()
+        micEnabled = false; keepListening = false
+        speechRecognizer.destroy(); tts.stop(); tts.shutdown(); super.onDestroy()
     }
 }
