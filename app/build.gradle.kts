@@ -15,9 +15,22 @@ android {
         versionName = "1.1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("JARVIS_KEYSTORE_PATH")
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("JARVIS_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("JARVIS_KEY_ALIAS")
+                keyPassword = System.getenv("JARVIS_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
