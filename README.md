@@ -1,19 +1,37 @@
-# JARVIS Android
+# 🤖 JARVIS Android
 
 دستیار صوتی فارسی JARVIS برای Android.
 
-## امکانات
+## 📱 دانلود برنامه
+
+### ⬇️ دانلود APK آماده
+برای دریافت جدیدترین نسخه آماده نصب:
+
+[**⬇️ دانلود JARVIS Android APK**](../../actions/workflows/build-apk.yml)
+
+بعد از باز شدن صفحه، آخرین اجرای موفق **Build JARVIS APK** را انتخاب کنید و از بخش **Artifacts** روی `JARVIS-Android-debug` بزنید.
+
+> نکته: GitHub برای دانلود Artifact ممکن است از شما بخواهد وارد حساب GitHub شوید.
+
+## ✨ امکانات
 - تشخیص گفتار فارسی (`fa-IR`)
 - Wake word: «جارویس» / `Jarvis`
 - پاسخ صوتی با Android Text-to-Speech
-- رابط کاربری HUD تیره
-- ورودی متنی و میکروفون
+- رابط کاربری HUD تیره و آینده‌نگر
+- ورودی متنی
+- دکمه روشن/خاموش میکروفون
 - ساخت خودکار APK با GitHub Actions
 
-## سازگاری
-Android 8.0 (API 26) و بالاتر. مناسب برای Samsung Galaxy A13.
+## 📲 نصب روی اندروید
+1. APK را دانلود کنید.
+2. فایل APK را باز کنید.
+3. در صورت درخواست Android، اجازه نصب از این منبع را فعال کنید.
+4. روی Install / نصب بزنید.
 
-## APK
-پس از اجرای GitHub Actions، فایل `app-debug.apk` در Artifact با نام `JARVIS-Android-debug` قرار می‌گیرد.
+## ⚙️ سازگاری
+Android 8.0 (API 26) و بالاتر. مناسب برای Samsung Galaxy A13 و دستگاه‌های سازگار.
+
+## 👨‍💻 سورس پروژه
+این پروژه Public است و می‌توانید سورس را مشاهده، Fork یا Clone کنید.
 
 > کلید API را مستقیماً داخل APK قرار ندهید. برای اتصال امن به مدل هوش مصنوعی از backend/proxy استفاده شود.
