@@ -13,6 +13,10 @@
 
     <application android:allowBackup="true" android:label="JARVIS" android:icon="@drawable/jarvis_icon" android:roundIcon="@drawable/jarvis_icon" android:supportsRtl="true" android:theme="@style/Theme.Jarvis">
         <service android:name=".JarvisForegroundService" android:exported="false" android:foregroundServiceType="microphone" />
+        <receiver android:name=".JarvisWidgetProvider" android:exported="false">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/jarvis_widget_info" />
+        </receiver>
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
