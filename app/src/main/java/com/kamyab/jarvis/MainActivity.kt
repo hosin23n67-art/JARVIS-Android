@@ -65,7 +65,37 @@ class MainActivity:AppCompatActivity(),TextToSpeech.OnInitListener{
     }catch(t:Throwable){runOnUiThread{speak("ضبط صدا ناموفق بود")}}
   }.start()
  }
- private fun speech(){sr=SpeechRecognizer.createSpeechRecognizer(this);si=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);putExtra(RecognizerIntent.EXTRA_LANGUAGE,"fa-IR")};sr.setRecognitionListener(object:RecognitionListener{override fun onReadyForSpeech(p:Bundle?){status.text="● LISTENING"};override fun onBeginningOfSpeech(){};override fun onRmsChanged(v:Float){};override fun onBufferReceived(b:ByteArray?){};override fun onEndOfSpeech(){};override fun onError(e:Int){restart()};override fun onPartialResults(p:Bundle?){};override fun onEvent(t:Int,p:Bundle?){};override fun onResults(r:Bundle?){val x=r?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty();if(x.isNotBlank())handle(x)else restart()}})}
+ private fun verifyThenProcess(raw:String){
+  val enrolled=voiceProfile.load()
+  if(enrolled==null){speak("اول از دکمه ثبت صدا، صدای خودت را ثبت کن");return}
+  listening=false
+  try{sr.cancel()}catch(_:Exception){}
+  Thread{
+    try{
+      runOnUiThread{status.text="● VOICE CHECK — دوباره همان فرمان را بگو"}
+      val min=AudioRecord.getMinBufferSize(SpeakerVerificationEngine.SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)
+      val recorder=AudioRecord(MediaRecorder.AudioSource.MIC,SpeakerVerificationEngine.SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,max(min,SpeakerVerificationEngine.SAMPLE_RATE*2))
+      val samples=ShortArray((SpeakerVerificationEngine.SAMPLE_RATE*15)/10)
+      recorder.startRecording()
+      var offset=0
+      while(offset<samples.size){
+        val n=recorder.read(samples,offset,samples.size-offset)
+        if(n<=0) throw IllegalStateException("microphone read failed")
+        offset+=n
+      }
+      recorder.stop();recorder.release()
+      voiceEngine.loadModel()
+      val probe=voiceEngine.embed(samples)
+      val score=voiceEngine.similarity(probe,enrolled)
+      if(score>=SpeakerVerificationEngine.THRESHOLD){
+        runOnUiThread{status.text="● VOICE VERIFIED";handle(raw)}
+      }else{
+        runOnUiThread{status.text="● VOICE REJECTED";speak("صدای شما تأیید نشد")}
+      }
+    }catch(t:Throwable){runOnUiThread{speak("بررسی صدا انجام نشد")}}
+  }.start()
+ }
+ private fun speech(){sr=SpeechRecognizer.createSpeechRecognizer(this);si=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);putExtra(RecognizerIntent.EXTRA_LANGUAGE,"fa-IR")};sr.setRecognitionListener(object:RecognitionListener{override fun onReadyForSpeech(p:Bundle?){status.text="● LISTENING"};override fun onBeginningOfSpeech(){};override fun onRmsChanged(v:Float){};override fun onBufferReceived(b:ByteArray?){};override fun onEndOfSpeech(){};override fun onError(e:Int){restart()};override fun onPartialResults(p:Bundle?){};override fun onEvent(t:Int,p:Bundle?){};override fun onResults(r:Bundle?){val x=r?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty();if(x.isNotBlank())verifyThenProcess(x)else restart()}})}
  private fun clean(s:String)=s.lowercase(Locale.getDefault()).replace('ي','ی').replace('ك','ک').replace("جارویس","").replace("jarvis","",true).trim()
  private fun handle(raw:String){log.append("\nشما › $raw\n");val c=clean(raw);val parts=c.split(Regex("\\s+(?:و بعد|بعدش|سپس|و سپس)\\s+|\\s+و\\s+(?=(?:یوتیوب|گوگل|دوربین|گالری|چراغ|تنظیمات|برنامه))"));if(parts.size>1){parts.filter{it.isNotBlank()}.forEachIndexed{i,p->android.os.Handler(mainLooper).postDelayed({process(p)},i*900L)};return};process(c)}
  private fun contact(name:String):String?{if(ContextCompat.checkSelfPermission(this,Manifest.permission.READ_CONTACTS)!=PackageManager.PERMISSION_GRANTED)return null;val cols=arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER,ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,cols,null,null,null)?.use{c->val ni=c.getColumnIndex(cols[1]);val pi=c.getColumnIndex(cols[0]);while(c.moveToNext()){val n=c.getString(ni)?:"";if(clean(n).contains(clean(name))||clean(name).contains(clean(n)))return c.getString(pi)}};return null}
