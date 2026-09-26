@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.max
 
 class MainActivity:AppCompatActivity(),TextToSpeech.OnInitListener{
  private lateinit var sr:SpeechRecognizer;private lateinit var si:Intent;private lateinit var tts:TextToSpeech;private lateinit var status:TextView;private lateinit var log:TextView;private lateinit var input:EditText;private lateinit var mic:Button
