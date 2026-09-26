@@ -7,6 +7,9 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.hardware.camera2.CameraManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -25,11 +28,43 @@ import java.util.*
 class MainActivity:AppCompatActivity(),TextToSpeech.OnInitListener{
  private lateinit var sr:SpeechRecognizer;private lateinit var si:Intent;private lateinit var tts:TextToSpeech;private lateinit var status:TextView;private lateinit var log:TextView;private lateinit var input:EditText;private lateinit var mic:Button
  private var listening=true;private var micOn=true;private var torch=false
+ private lateinit var voiceEngine: SpeakerVerificationEngine
+ private lateinit var voiceProfile: VoiceProfileStore
  private val cyan=Color.rgb(65,230,255);private val bg=Color.rgb(2,8,16);private val panel=Color.rgb(6,24,36)
- override fun onCreate(b:Bundle?){super.onCreate(b);window.statusBarColor=bg;window.navigationBarColor=bg;tts=TextToSpeech(this,this);ui();speech();permissions()}
+ override fun onCreate(b:Bundle?){super.onCreate(b);window.statusBarColor=bg;window.navigationBarColor=bg;tts=TextToSpeech(this,this);voiceEngine=SpeakerVerificationEngine(this);voiceProfile=VoiceProfileStore(this);ui();speech();permissions()}
  private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
  private fun shape(f:Int,s:Int=cyan,r:Float=20f)=GradientDrawable().apply{setColor(f);cornerRadius=dp(r.toInt()).toFloat();setStroke(dp(1),s)}
- private fun ui(){val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(14));setBackgroundColor(bg)};root.addView(TextView(this).apply{text="J.A.R.V.I.S";textSize=31f;setTextColor(cyan);gravity=Gravity.CENTER;setTypeface(Typeface.DEFAULT,Typeface.BOLD);setShadowLayer(18f,0f,0f,cyan)});root.addView(TextView(this).apply{text="NEURAL COMMAND HUD • v1.7";textSize=10f;setTextColor(Color.rgb(140,235,255));gravity=Gravity.CENTER});val hud=TextView(this).apply{text="◉\nCORE ONLINE";textSize=43f;gravity=Gravity.CENTER;setTextColor(cyan);setShadowLayer(25f,0f,0f,cyan);background=shape(Color.rgb(3,20,31),Color.rgb(30,145,180),100f);setOnClickListener{startListen()}};root.addView(hud,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(185)).apply{topMargin=dp(10)});status=TextView(this).apply{text="● READY | VOICE | CONTACTS | MEMORY";textSize=11f;setTextColor(cyan);gravity=Gravity.CENTER;setPadding(0,dp(7),0,dp(7))};root.addView(status);val quick=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};listOf("📷 دوربین" to{camera()},"🔦 چراغ" to{toggleTorch()},"⚙ تنظیمات" to{startActivity(Intent(Settings.ACTION_SETTINGS))}).forEach{(t,a)->quick.addView(Button(this).apply{text=t;textSize=11f;setOnClickListener{a()}},LinearLayout.LayoutParams(0,dp(47),1f))};root.addView(quick);val sc=ScrollView(this).apply{background=shape(panel,Color.rgb(20,80,100),16f)};log=TextView(this).apply{text="JARVIS › v1.7 آماده است.\n";textSize=14f;setTextColor(Color.WHITE);setPadding(dp(14),dp(12),dp(14),dp(12));textDirection=View.TEXT_DIRECTION_RTL};sc.addView(log);root.addView(sc,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f).apply{topMargin=dp(7)});val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};input=EditText(this).apply{hint="فرمان فارسی یا سؤال...";setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setSingleLine(true)};val send=Button(this).apply{text="ارسال";setOnClickListener{input.text.toString().trim().takeIf{it.isNotEmpty()}?.let{input.setText("");handle(it)}}};row.addView(input,LinearLayout.LayoutParams(0,dp(52),1f));row.addView(send,LinearLayout.LayoutParams(dp(86),dp(52)));root.addView(row);mic=Button(this).apply{text="🎙 میکروفون روشن";setTextColor(bg);background=shape(cyan);setOnClickListener{micOn=!micOn;listening=micOn;text=if(micOn)"🎙 میکروفون روشن" else "🔇 میکروفون خاموش";if(micOn)startListen()else try{sr.cancel()}catch(_:Exception){}}};root.addView(mic,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(50)).apply{topMargin=dp(6)});setContentView(root)}
+ private fun ui(){val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(14));setBackgroundColor(bg)};root.addView(TextView(this).apply{text="J.A.R.V.I.S";textSize=31f;setTextColor(cyan);gravity=Gravity.CENTER;setTypeface(Typeface.DEFAULT,Typeface.BOLD);setShadowLayer(18f,0f,0f,cyan)});root.addView(TextView(this).apply{text="NEURAL COMMAND HUD • v1.7";textSize=10f;setTextColor(Color.rgb(140,235,255));gravity=Gravity.CENTER});val hud=TextView(this).apply{text="◉\nCORE ONLINE";textSize=43f;gravity=Gravity.CENTER;setTextColor(cyan);setShadowLayer(25f,0f,0f,cyan);background=shape(Color.rgb(3,20,31),Color.rgb(30,145,180),100f);setOnClickListener{startListen()}};root.addView(hud,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(185)).apply{topMargin=dp(10)});status=TextView(this).apply{text="● READY | VOICE | CONTACTS | MEMORY";textSize=11f;setTextColor(cyan);gravity=Gravity.CENTER;setPadding(0,dp(7),0,dp(7))};root.addView(status);val quick=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};listOf("📷 دوربین" to{camera()},"🔦 چراغ" to{toggleTorch()},"🎙 ثبت صدا" to{enrollVoice()},"⚙ تنظیمات" to{startActivity(Intent(Settings.ACTION_SETTINGS))}).forEach{(t,a)->quick.addView(Button(this).apply{text=t;textSize=11f;setOnClickListener{a()}},LinearLayout.LayoutParams(0,dp(47),1f))};root.addView(quick);val sc=ScrollView(this).apply{background=shape(panel,Color.rgb(20,80,100),16f)};log=TextView(this).apply{text="JARVIS › v1.7 آماده است.\n";textSize=14f;setTextColor(Color.WHITE);setPadding(dp(14),dp(12),dp(14),dp(12));textDirection=View.TEXT_DIRECTION_RTL};sc.addView(log);root.addView(sc,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1f).apply{topMargin=dp(7)});val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};input=EditText(this).apply{hint="فرمان فارسی یا سؤال...";setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setSingleLine(true)};val send=Button(this).apply{text="ارسال";setOnClickListener{input.text.toString().trim().takeIf{it.isNotEmpty()}?.let{input.setText("");handle(it)}}};row.addView(input,LinearLayout.LayoutParams(0,dp(52),1f));row.addView(send,LinearLayout.LayoutParams(dp(86),dp(52)));root.addView(row);mic=Button(this).apply{text="🎙 میکروفون روشن";setTextColor(bg);background=shape(cyan);setOnClickListener{micOn=!micOn;listening=micOn;text=if(micOn)"🎙 میکروفون روشن" else "🔇 میکروفون خاموش";if(micOn)startListen()else try{sr.cancel()}catch(_:Exception){}}};root.addView(mic,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(50)).apply{topMargin=dp(6)});setContentView(root)}
+ private fun enrollVoice(){
+  if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){speak("اجازه میکروفون لازم است");return}
+  speak("برای ثبت صدای شما، سه ثانیه طبیعی صحبت کنید")
+  Thread{
+    try{
+      val min=AudioRecord.getMinBufferSize(SpeakerVerificationEngine.SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT)
+      val recorder=AudioRecord(MediaRecorder.AudioSource.MIC,SpeakerVerificationEngine.SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT,max(min,SpeakerVerificationEngine.SAMPLE_RATE*2))
+      val samples=ShortArray(SpeakerVerificationEngine.SAMPLE_RATE*3)
+      recorder.startRecording()
+      var offset=0
+      while(offset<samples.size){
+        val n=recorder.read(samples,offset,samples.size-offset)
+        if(n<=0) throw IllegalStateException("microphone read failed")
+        offset+=n
+      }
+      recorder.stop();recorder.release()
+      voiceEngine.downloadModelIfNeeded{result->
+        result.onSuccess{
+          Thread{
+            try{
+              val embedding=voiceEngine.embed(samples)
+              voiceProfile.save(embedding)
+              runOnUiThread{status.text="● VOICE PROFILE SAVED";speak("صدای شما ثبت شد")}
+            }catch(t:Throwable){runOnUiThread{speak("ثبت صدا انجام نشد")}}
+          }.start()
+        }.onFailure{t->runOnUiThread{speak("دانلود مدل احراز صدا ناموفق بود")}}
+      }
+    }catch(t:Throwable){runOnUiThread{speak("ضبط صدا ناموفق بود")}}
+  }.start()
+ }
  private fun speech(){sr=SpeechRecognizer.createSpeechRecognizer(this);si=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);putExtra(RecognizerIntent.EXTRA_LANGUAGE,"fa-IR")};sr.setRecognitionListener(object:RecognitionListener{override fun onReadyForSpeech(p:Bundle?){status.text="● LISTENING"};override fun onBeginningOfSpeech(){};override fun onRmsChanged(v:Float){};override fun onBufferReceived(b:ByteArray?){};override fun onEndOfSpeech(){};override fun onError(e:Int){restart()};override fun onPartialResults(p:Bundle?){};override fun onEvent(t:Int,p:Bundle?){};override fun onResults(r:Bundle?){val x=r?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty();if(x.isNotBlank())handle(x)else restart()}})}
  private fun clean(s:String)=s.lowercase(Locale.getDefault()).replace('ي','ی').replace('ك','ک').replace("جارویس","").replace("jarvis","",true).trim()
  private fun handle(raw:String){log.append("\nشما › $raw\n");val c=clean(raw);val parts=c.split(Regex("\\s+(?:و بعد|بعدش|سپس|و سپس)\\s+|\\s+و\\s+(?=(?:یوتیوب|گوگل|دوربین|گالری|چراغ|تنظیمات|برنامه))"));if(parts.size>1){parts.filter{it.isNotBlank()}.forEachIndexed{i,p->android.os.Handler(mainLooper).postDelayed({process(p)},i*900L)};return};process(c)}
