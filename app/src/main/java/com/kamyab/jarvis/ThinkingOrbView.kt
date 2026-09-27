@@ -4,25 +4,36 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.view.View
-import kotlin.math.cos
-import kotlin.math.sin
 
 class ThinkingOrbView(context: Context) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var phase = 0f
     private var thinking = false
+    private var startedAt = 0L
+    private var elapsedSeconds = 0L
     private val animator = ValueAnimator.ofFloat(0f, 360f).apply {
         duration = 2600
         repeatCount = ValueAnimator.INFINITE
-        addUpdateListener { phase = it.animatedValue as Float; invalidate() }
+        addUpdateListener {
+            phase = it.animatedValue as Float
+            if (thinking && startedAt > 0L) elapsedSeconds = (System.currentTimeMillis() - startedAt) / 1000L
+            invalidate()
+        }
     }
 
     init { setLayerType(View.LAYER_TYPE_SOFTWARE, null) }
 
     fun setThinking(value: Boolean) {
         thinking = value
-        if (value && !animator.isStarted) animator.start()
-        if (!value) invalidate()
+        if (value) {
+            startedAt = System.currentTimeMillis()
+            elapsedSeconds = 0L
+            if (!animator.isStarted) animator.start()
+        } else {
+            startedAt = 0L
+            elapsedSeconds = 0L
+            invalidate()
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -34,15 +45,13 @@ class ThinkingOrbView(context: Context) : View(context) {
         super.onDraw(canvas)
         val cx = width / 2f
         val cy = height / 2f
-        val r = (minOf(width, height) * 0.36f)
+        val r = minOf(width, height) * 0.36f
 
-        // Outer glow
         paint.shader = RadialGradient(cx, cy, r * 1.35f,
-            intArrayOf(Color.argb(if (thinking) 105 else 55, 65, 230, 255), Color.TRANSPARENT),
+            intArrayOf(if (thinking) Color.argb(105, 65, 230, 255) else Color.argb(55, 65, 230, 255), Color.TRANSPARENT),
             null, Shader.TileMode.CLAMP)
         canvas.drawCircle(cx, cy, r * 1.35f, paint)
 
-        // 3D sphere lighting
         paint.shader = RadialGradient(cx - r * .32f, cy - r * .38f, r * 1.25f,
             intArrayOf(Color.WHITE, Color.rgb(85, 225, 255), Color.rgb(25, 75, 235), Color.rgb(3, 8, 35)),
             floatArrayOf(0f, .18f, .58f, 1f), Shader.TileMode.CLAMP)
@@ -50,7 +59,6 @@ class ThinkingOrbView(context: Context) : View(context) {
         canvas.drawCircle(cx, cy, r, paint)
         paint.clearShadowLayer()
 
-        // Rotating energy ring
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = dp(5f)
         paint.shader = SweepGradient(cx, cy,
@@ -62,7 +70,6 @@ class ThinkingOrbView(context: Context) : View(context) {
         canvas.drawArc(cx-r*1.12f, cy-r*1.12f, cx+r*1.12f, cy+r*1.12f, -20f, 75f, false, paint)
         canvas.restore()
 
-        // Floating highlight for depth
         paint.style = Paint.Style.FILL
         paint.shader = RadialGradient(cx-r*.32f, cy-r*.38f, r*.32f,
             Color.argb(190,255,255,255), Color.TRANSPARENT, Shader.TileMode.CLAMP)
@@ -73,7 +80,8 @@ class ThinkingOrbView(context: Context) : View(context) {
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.DEFAULT_BOLD
         paint.textSize = dp(12f)
-        canvas.drawText(if (thinking) "THINKING" else "JARVIS", cx, cy + r + dp(30f), paint)
+        val label = if (thinking) "THINKING • " + elapsedSeconds + "s" else "JARVIS"
+        canvas.drawText(label, cx, cy + r + dp(30f), paint)
         paint.style = Paint.Style.FILL
     }
 
