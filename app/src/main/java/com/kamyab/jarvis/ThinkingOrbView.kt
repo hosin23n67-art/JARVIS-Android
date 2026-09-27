@@ -51,7 +51,7 @@ class ThinkingOrbView(context: Context) : View(context) {
         paint.clearShadowLayer()
         paint.style=Paint.Style.STROKE
         paint.strokeWidth=dp(4f)
-        paint.shader=SweepGradient(cx,cy,intArrayOf(Color.TRANSPARENT,Color.rgb(100,245,255),Color.rgb(40,90,255),Color.TRANSPARENT))
+        paint.shader=SweepGradient(cx,cy,intArrayOf(Color.TRANSPARENT,Color.rgb(100,245,255),Color.rgb(40,90,255),Color.TRANSPARENT),null)
         canvas.save()
         canvas.rotate(phase,cx,cy)
         canvas.drawArc(cx-r*1.25f,cy-r*1.25f,cx+r*1.25f,cy+r*1.25f,-35f,115f,false,paint)
