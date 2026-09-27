@@ -62,7 +62,7 @@ class MainActivity:AppCompatActivity(),TextToSpeech.OnInitListener{
   c.contains("سلام")->speak("سلام. جارویس نسخه یک هفت در خدمت شماست")
   else->{status.text="● SEARCHING";openUrl("https://www.google.com/search?q="+Uri.encode(c))}
  }}
- private fun speak(x:String){log.append("\nJARVIS › $x\n");val resume=micOn;listening=false;try{sr.cancel()}catch(_:Exception){};tts.speak(x,TextToSpeech.QUEUE_FLUSH,null,"jarvis");android.os.Handler(mainLooper).postDelayed({if(resume&&micOn){listening=true;startListen()}},1600L+x.length*28L)}
+ private fun speak(x:String){orb.setThinking(false);status.text="● READY | VOICE | CONTACTS | MEMORY";log.append("\nJARVIS › $x\n");val resume=micOn;listening=false;try{sr.cancel()}catch(_:Exception){};tts.speak(x,TextToSpeech.QUEUE_FLUSH,null,"jarvis");android.os.Handler(mainLooper).postDelayed({if(resume&&micOn){listening=true;startListen()}},1600L+x.length*28L)}
  private fun permissions(){val p=mutableListOf<String>();if(ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)p+=Manifest.permission.RECORD_AUDIO;if(ContextCompat.checkSelfPermission(this,Manifest.permission.READ_CONTACTS)!=PackageManager.PERMISSION_GRANTED)p+=Manifest.permission.READ_CONTACTS;if(p.isNotEmpty())ActivityCompat.requestPermissions(this,p.toTypedArray(),100)else startListen()}
  override fun onRequestPermissionsResult(r:Int,p:Array<out String>,g:IntArray){super.onRequestPermissionsResult(r,p,g);if(r==100)startListen()}
  private fun startListen(){if(!micOn||!listening||ContextCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)return;try{sr.startListening(si)}catch(_:Exception){}}
