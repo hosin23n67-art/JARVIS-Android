@@ -32,6 +32,7 @@ class LoginActivity : AppCompatActivity() {
     private fun open(result: String) {
         try {
             ApiClient.token = JSONObject(result).getString("token")
+            getSharedPreferences("chat", MODE_PRIVATE).edit().putString("token", ApiClient.token).apply()
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         } catch (_: Exception) { toast("پاسخ سرور نامعتبر است") }
