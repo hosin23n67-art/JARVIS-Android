@@ -7,10 +7,19 @@
     <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="16dp">
         <TextView android:id="@+id/messages" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="به ChatMessenger خوش آمدید." android:textSize="17sp" android:gravity="end"/>
     </ScrollView>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp" android:gravity="center_vertical">
+    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:padding="6dp">
+            <Button android:id="@+id/imageButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="🖼️"/>
+            <Button android:id="@+id/videoButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="🎬"/>
+            <Button android:id="@+id/audioButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="🎵"/>
+            <Button android:id="@+id/fileButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="📄"/>
+            <Button android:id="@+id/cameraButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="📷"/>
+            <Button android:id="@+id/voiceButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="🎙️"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp">
         <Button android:id="@+id/attachButton" android:layout_width="48dp" android:layout_height="48dp" android:text="+"/>
         <EditText android:id="@+id/messageInput" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="پیام..." android:inputType="textMultiLine" android:maxLines="4"/>
-        <Button android:id="@+id/voiceButton" android:layout_width="48dp" android:layout_height="48dp" android:text="🎙"/>
         <Button android:id="@+id/sendButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="ارسال"/>
     </LinearLayout>
 </LinearLayout>
