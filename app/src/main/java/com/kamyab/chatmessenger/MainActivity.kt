@@ -13,15 +13,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var messages: TextView
     private var socket: ChatSocket? = null
     private var peerId = ""
+    private var recording = false
+    private var recorder: android.media.MediaRecorder? = null
+    private var voiceFile: java.io.File? = null
 
     private val picker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { addMessage("پیوست انتخاب شد: " + (it.lastPathSegment ?: "فایل")) }
+        uri?.let { uploadMedia(it) }
     }
     private val filePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        uri?.let { addMessage("فایل انتخاب شد: " + (it.lastPathSegment ?: "فایل")) }
+        uri?.let { uploadMedia(it) }
     }
     private val camera = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        if (bitmap != null) addMessage("📷 عکس دوربین آماده شد")
+        if (bitmap != null) { val f = java.io.File(cacheDir, "camera_" + System.currentTimeMillis() + ".jpg"); java.io.FileOutputStream(f).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }; uploadMedia(Uri.fromFile(f)) }
     }
     private val audioPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         addMessage(if (granted) "🎙️ میکروفون آماده است" else "دسترسی میکروفون رد شد")
@@ -70,9 +73,47 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.fileButton).setOnClickListener { filePicker.launch(arrayOf("*/*")) }
         findViewById<Button>(R.id.cameraButton).setOnClickListener { camera.launch(null) }
         findViewById<Button>(R.id.voiceButton).setOnClickListener {
-            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
-                addMessage("🎙️ میکروفون آماده است")
-            else audioPermission.launch(Manifest.permission.RECORD_AUDIO)
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { audioPermission.launch(Manifest.permission.RECORD_AUDIO); return@setOnClickListener }
+            if (!recording) startVoice() else stopVoice()
+        }
+    }
+
+    private fun startVoice() {
+        try {
+            voiceFile = java.io.File(cacheDir, "voice_" + System.currentTimeMillis() + ".m4a")
+            recorder = android.media.MediaRecorder(this).apply {
+                setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
+                setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(voiceFile!!.absolutePath)
+                prepare(); start()
+            }
+            recording = true
+            findViewById<Button>(R.id.voiceButton).text = "⏹️"
+            addMessage("🎙️ در حال ضبط...")
+        } catch (_: Exception) { toast("شروع ضبط ناموفق بود") }
+    }
+
+    private fun stopVoice() {
+        try { recorder?.stop() } catch (_: Exception) {}
+        recorder?.release(); recorder = null; recording = false
+        findViewById<Button>(R.id.voiceButton).text = "🎙️"
+        voiceFile?.let { uploadMedia(Uri.fromFile(it)) }
+    }
+
+    private fun uploadMedia(uri: Uri) {
+        addMessage("⏳ در حال ارسال فایل...")
+        ApiClient.upload(uri, this) { result ->
+            runOnUiThread {
+                if (result != null) {
+                    try {
+                        val obj = JSONObject(result)
+                        val url = obj.optString("url")
+                        if (peerId.isNotEmpty() && url.isNotEmpty()) socket?.sendMessage(peerId, "[media] " + url)
+                        addMessage("✅ فایل روی سرور قرار گرفت")
+                    } catch (_: Exception) { addMessage("❌ پاسخ سرور نامعتبر است") }
+                } else addMessage("❌ ارسال فایل ناموفق بود")
+            }
         }
     }
 
