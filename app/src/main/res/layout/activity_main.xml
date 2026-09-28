@@ -2,9 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F5F7FA">
     <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:background="#1976D2" android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="16dp">
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="ChatMessenger" android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="آنلاین" android:textColor="#FFFFFF"/>
+        <TextView android:id="@+id/connectionState" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="در حال اتصال" android:textColor="#FFFFFF"/>
     </LinearLayout>
-    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="16dp">
+    <EditText android:id="@+id/peerInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="شناسه کاربر مقصد" android:inputType="text"/>\n    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="16dp">
         <TextView android:id="@+id/messages" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="به ChatMessenger خوش آمدید." android:textSize="17sp" android:gravity="end"/>
     </ScrollView>
     <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none">
